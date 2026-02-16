@@ -21,25 +21,58 @@ enum Role {
   ADMIN
 }
 
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NONE
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
+  emailVerified Boolean @default(false)
+  phone     String?  @unique
+  phoneVerified Boolean @default(false)
   password  String
+  resetToken String?
+  resetTokenExpiry DateTime?
   role      Role     @default(USER)
+  kycStatus KycStatus @default(NONE)
+  isBlocked Boolean   @default(false)
   createdAt DateTime @default(now())
   accounts  Account[]
   intentsBought PaymentIntent[] @relation("IntentBuyer")
   intentsSold   PaymentIntent[] @relation("IntentSeller")
   listings      Listing[]
+  buyerConversations Conversation[] @relation("BuyerConversations")
+  sellerConversations Conversation[] @relation("SellerConversations")
+  sentMessages      Message[]       @relation("SentMessages")
+  givenReviews      Review[]        @relation("GivenReviews")
+  receivedReviews   Review[]        @relation("ReceivedReviews")
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  INACTIVE
 }
 
 model Listing {
   id        String   @id @default(uuid())
   title     String
+  description String?
   priceCfa  Int
+  images    String[]
+  size      String?
+  brand     String?
+  condition String?
+  status    ListingStatus @default(ACTIVE)
   sellerId  String
   seller    User     @relation(fields: [sellerId], references: [id])
   intents   PaymentIntent[]
+  conversations Conversation[]
+  reviews       Review[]
   createdAt DateTime @default(now())
 }
 
@@ -107,4 +140,41 @@ model IdempotencyKey {
   createdAt    DateTime @default(now())
   lockedAt     DateTime?
   completedAt  DateTime?
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id])
+  buyerId   String
+  buyer     User     @relation("BuyerConversations", fields: [buyerId], references: [id])
+  sellerId  String
+  seller    User     @relation("SellerConversations", fields: [sellerId], references: [id])
+  messages  Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  content        String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  reviewerId String
+  reviewer   User     @relation("GivenReviews", fields: [reviewerId], references: [id])
+  targetId   String
+  target     User     @relation("ReceivedReviews", fields: [targetId], references: [id])
+  listingId  String?
+  listing    Listing? @relation(fields: [listingId], references: [id])
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
 }

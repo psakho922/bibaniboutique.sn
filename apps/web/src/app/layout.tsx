@@ -1,15 +1,28 @@
-/**
- * AUDIT DOC (Web Layout):
- * - Front minimal: simule un parcours d’achat.
- */
-import React from 'react';
+'use client';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+import { AuthProvider } from '@/context/auth';
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
+import "./globals.css";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="fr">
-      <body style={{ fontFamily: 'system-ui', margin: 20 }}>
-        <h1>Boutique Démo</h1>
-        <main>{children}</main>
+      <body className={`${inter.className} min-h-screen flex flex-col bg-gray-50`}>
+        <AuthProvider>
+          <Navbar />
+          <main className="flex-grow">
+            {children}
+          </main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

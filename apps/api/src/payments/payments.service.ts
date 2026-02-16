@@ -53,6 +53,15 @@ export class PaymentsService {
     const intent = await p.paymentIntent.findUnique({ where: { id: intentId } });
     if (!intent) throw new NotFoundException();
     if (intent.status !== 'REQUIRES_CONFIRMATION') throw new ForbiddenException('invalid_state');
+
+    // AUDIT: Check User Block Status & KYC
+    const seller = await p.user.findUnique({ where: { id: intent.sellerId } });
+    if (!seller || seller.isBlocked) throw new ForbiddenException('Seller blocked or invalid');
+    if (seller.kycStatus !== 'APPROVED') throw new ForbiddenException('Seller KYC not approved');
+
+    const buyer = await p.user.findUnique({ where: { id: intent.buyerId } });
+    if (!buyer || buyer.isBlocked) throw new ForbiddenException('Buyer blocked');
+
     const accounts = await this.ensureAccounts(intent.sellerId);
     await p.$transaction([
       p.paymentIntent.update({ where: { id: intent.id }, data: { status: 'CONFIRMED' } }),
@@ -71,6 +80,12 @@ export class PaymentsService {
     const intent = await p.paymentIntent.findUnique({ where: { id: intentId } });
     if (!intent) throw new NotFoundException();
     if (intent.status !== 'CONFIRMED') throw new ForbiddenException('invalid_state');
+
+    // AUDIT: Check User Block Status & KYC
+    const seller = await p.user.findUnique({ where: { id: intent.sellerId } });
+    if (!seller || seller.isBlocked) throw new ForbiddenException('Seller blocked or invalid');
+    if (seller.kycStatus !== 'APPROVED') throw new ForbiddenException('Seller KYC not approved');
+
     const accounts = await this.ensureAccounts(intent.sellerId);
     const sellerAmount = intent.amountCfa - intent.feeCfa;
     await p.$transaction([
@@ -98,16 +113,45 @@ export class PaymentsService {
       p.ledgerEntry.createMany({
         data: [
           { accountId: accounts.escrowId, intentId: intent.id, deltaCfa: -intent.amountCfa, desc: 'refund: debit escrow' },
-          { accountId: accounts.pspId, intentId: intent.id, deltaCfa: +intent.amountCfa, desc: 'refund: credit external' },
+          { accountId: accounts.pspId, intentId: intent.id, deltaCfa: +intent.amountCfa, desc: 'refund: credit user' },
         ],
       }),
     ]);
     return { id: intent.id, status: 'REFUNDED' };
   }
 
+  async cancelIntent(intentId: string, userId: string, isAdmin = false) {
+    const p: any = this.prisma as any;
+    const intent = await p.paymentIntent.findUnique({ where: { id: intentId } });
+    if (!intent) throw new NotFoundException();
+    
+    if (!isAdmin && intent.buyerId !== userId && intent.sellerId !== userId) {
+       throw new ForbiddenException('Non autorisé');
+    }
+  
+    if (intent.status !== 'REQUIRES_CONFIRMATION') {
+      throw new ForbiddenException('Impossible d\'annuler une commande déjà payée ou traitée');
+    }
+  
+    return p.paymentIntent.update({
+      where: { id: intentId },
+      data: { status: 'CANCELED' }
+    });
+  }
+
   listIntents() {
     const p: any = this.prisma as any;
     return p.paymentIntent.findMany({ orderBy: { createdAt: 'desc' } });
+  }
+
+  async getIntent(id: string) {
+    const p: any = this.prisma as any;
+    const intent = await p.paymentIntent.findUnique({
+      where: { id },
+      include: { listing: true, buyer: true, seller: true }
+    });
+    if (!intent) throw new NotFoundException('Transaction non trouvée');
+    return intent;
   }
 
   async getAllAccountBalances() {
@@ -126,6 +170,28 @@ export class PaymentsService {
 
   listLedger() {
     const p: any = this.prisma as any;
-    return p.ledgerEntry.findMany({ orderBy: { createdAt: 'desc' }, take: 200 });
+    return p.ledgerEntry.findMany({ 
+      orderBy: { createdAt: 'desc' }, 
+      take: 200,
+      include: { account: { select: { type: true, userId: true } } }
+    });
+  }
+
+  getUserOrders(userId: string) {
+    const p: any = this.prisma as any;
+    return p.paymentIntent.findMany({
+      where: { buyerId: userId },
+      include: { listing: true, seller: { select: { email: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  getUserSales(userId: string) {
+    const p: any = this.prisma as any;
+    return p.paymentIntent.findMany({
+      where: { sellerId: userId },
+      include: { listing: true, buyer: { select: { email: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 }
