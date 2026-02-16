@@ -1,0 +1,110 @@
+// AUDIT-GRADE PRISMA SCHEMA
+// Compréhension pour débutant: ce fichier définit la base de données.
+// - User: comptes utilisateurs
+// - Listing: objets vendus
+// - PaymentIntent: intention de paiement (workflow)
+// - Account & LedgerEntry: comptabilité en double écriture
+// - IdempotencyKey: protection anti-rejeu (mêmes requêtes => même résultat)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  SELLER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  accounts  Account[]
+  intentsBought PaymentIntent[] @relation("IntentBuyer")
+  intentsSold   PaymentIntent[] @relation("IntentSeller")
+  listings      Listing[]
+}
+
+model Listing {
+  id        String   @id @default(uuid())
+  title     String
+  priceCfa  Int
+  sellerId  String
+  seller    User     @relation(fields: [sellerId], references: [id])
+  intents   PaymentIntent[]
+  createdAt DateTime @default(now())
+}
+
+enum PaymentIntentStatus {
+  REQUIRES_CONFIRMATION
+  CONFIRMED
+  CAPTURED
+  REFUNDED
+  CANCELED
+}
+
+model PaymentIntent {
+  id         String               @id @default(uuid())
+  listingId  String
+  listing    Listing              @relation(fields: [listingId], references: [id])
+  buyerId    String
+  buyer      User                 @relation("IntentBuyer", fields: [buyerId], references: [id])
+  sellerId   String
+  seller     User                 @relation("IntentSeller", fields: [sellerId], references: [id])
+  amountCfa  Int
+  feeCfa     Int
+  status     PaymentIntentStatus  @default(REQUIRES_CONFIRMATION)
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  idempotencyKey String?          @unique
+  ledgerEntries LedgerEntry[]
+}
+
+enum AccountType {
+  USER
+  PLATFORM_ESCROW
+  PLATFORM_FEES
+  EXTERNAL_PSP
+}
+
+model Account {
+  id        String      @id @default(uuid())
+  type      AccountType
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id])
+  currency  String      @default("XOF")
+  createdAt DateTime    @default(now())
+  entries   LedgerEntry[]
+}
+
+model LedgerEntry {
+  id        String        @id @default(uuid())
+  accountId String
+  account   Account       @relation(fields: [accountId], references: [id])
+  intentId  String?
+  intent    PaymentIntent? @relation(fields: [intentId], references: [id])
+  deltaCfa  Int
+  desc      String?
+  createdAt DateTime      @default(now())
+}
+
+model IdempotencyKey {
+  id           String   @id @default(uuid())
+  key          String   @unique
+  method       String
+  path         String
+  requestHash  String
+  statusCode   Int?
+  responseBody Json?
+  createdAt    DateTime @default(now())
+  lockedAt     DateTime?
+  completedAt  DateTime?
+}
