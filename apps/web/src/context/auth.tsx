@@ -56,11 +56,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      // Assuming there's a /users/me endpoint or similar
-      // For now we just rely on local storage or update if needed
-      // const res = await api.get('/users/me');
-      // setUser(res.data);
-      // localStorage.setItem('user', JSON.stringify(res.data));
+      const res = await api.get('/users/me');
+      // The response from /users/me contains detailed info, but we only store basic user info in context/localStorage
+      // to avoid storing too much data. We update the role if it changed.
+      if (user) {
+        const updatedUser = { ...user, role: res.data.role };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
     } catch (error) {
       console.error('Failed to refresh user', error);
     }

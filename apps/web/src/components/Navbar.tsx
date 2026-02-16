@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/context/auth';
-import { ShoppingBag, User, LogOut, Search, Menu, X } from 'lucide-react';
+import { ShoppingBag, User, LogOut, Search, Menu, X, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 
@@ -31,10 +31,18 @@ export function Navbar() {
             
             {user ? (
               <div className="relative flex items-center space-x-4">
-                <Link href="/dashboard" className="text-gray-500 hover:text-gray-900">
+                <Link href="/chat" className="text-gray-500 hover:text-gray-900" title="Messagerie">
+                  <MessageCircle className="h-6 w-6" />
+                </Link>
+                <Link href="/account" className="text-gray-500 hover:text-gray-900" title="Mon Compte">
                   <User className="h-6 w-6" />
                 </Link>
-                <button onClick={logout} className="text-gray-500 hover:text-red-600">
+                {user.role === 'ADMIN' && (
+                  <Link href="/admin/dashboard" className="text-red-600 hover:text-red-800 font-bold text-sm">
+                    ADMIN
+                  </Link>
+                )}
+                <button onClick={logout} className="text-gray-500 hover:text-red-600" title="Déconnexion">
                   <LogOut className="h-6 w-6" />
                 </button>
               </div>
