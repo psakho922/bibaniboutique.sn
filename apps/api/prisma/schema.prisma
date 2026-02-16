@@ -21,11 +21,20 @@ enum Role {
   ADMIN
 }
 
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NONE
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
+  phone     String?  @unique
   password  String
   role      Role     @default(USER)
+  kycStatus KycStatus @default(NONE)
   createdAt DateTime @default(now())
   accounts  Account[]
   intentsBought PaymentIntent[] @relation("IntentBuyer")
@@ -36,7 +45,12 @@ model User {
 model Listing {
   id        String   @id @default(uuid())
   title     String
+  description String?
   priceCfa  Int
+  images    String[]
+  size      String?
+  brand     String?
+  condition String?
   sellerId  String
   seller    User     @relation(fields: [sellerId], references: [id])
   intents   PaymentIntent[]

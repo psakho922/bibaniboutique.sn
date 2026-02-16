@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    container_name: biba_audit_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: biba_audit
+      POSTGRES_USER: biba
+      POSTGRES_PASSWORD: biba_password
+    ports:
+      - "5437:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+volumes:
+  db_data:
