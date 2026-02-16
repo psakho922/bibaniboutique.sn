@@ -1,0 +1,13 @@
+{
+  "name": "biba-audit-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "typecheck": "npm --workspace=@audit/api run typecheck",
+    "dev:api": "npm --workspace=@audit/api run dev",
+    "lint": "npm --workspace=@audit/api run lint"
+  }
+}
