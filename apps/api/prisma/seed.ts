@@ -8,10 +8,10 @@ async function main() {
   const password = await bcrypt.hash('password123', 10);
   
   const seller = await prisma.user.upsert({
-    where: { email: 'vendeur@biba.sn' },
+    where: { email: 'vendeur@vinted.sn' },
     update: {},
     create: {
-      email: 'vendeur@biba.sn',
+      email: 'vendeur@vinted.sn',
       password,
       role: 'SELLER',
       phone: '+221770000001',
@@ -19,10 +19,10 @@ async function main() {
   });
 
   const buyer = await prisma.user.upsert({
-    where: { email: 'acheteur@biba.sn' },
+    where: { email: 'acheteur@vinted.sn' },
     update: {},
     create: {
-      email: 'acheteur@biba.sn',
+      email: 'acheteur@vinted.sn',
       password,
       role: 'USER',
       phone: '+221770000002',
@@ -30,10 +30,10 @@ async function main() {
   });
 
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@biba.sn' },
+    where: { email: 'admin@vinted.sn' },
     update: {},
     create: {
-      email: 'admin@biba.sn',
+      email: 'admin@vinted.sn',
       password,
       role: 'ADMIN',
       phone: '+221770000000',
