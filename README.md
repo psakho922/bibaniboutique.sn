@@ -1,4 +1,4 @@
-# Biba Audit — Marketplace & Fintech Audit-Grade
+# Vinted — Marketplace & Fintech Audit-Grade
 
 ## Objectif
 Un projet complet de marketplace C2C (type Vinted/Leboncoin) avec une brique de paiement audit-grade (Ledger double écriture), une interface admin complète et un frontend utilisateur moderne.
@@ -52,7 +52,7 @@ Le projet est conçu pour être pédagogique, lisible et "production-ready" pour
 
 **Créer un fichier `.env` à la racine de `apps/api` :**
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/biba_audit?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vinted?schema=public"
 JWT_SECRET="super-secret-key-change-me"
 ```
 
@@ -62,7 +62,7 @@ JWT_SECRET="super-secret-key-change-me"
 docker-compose up -d
 
 # Option B : PostgreSQL local
-# Assurez-vous que la BDD "biba_audit" existe.
+# Assurez-vous que la BDD "vinted" existe.
 ```
 
 **Initialiser le schéma et les données (Seed) :**
@@ -72,9 +72,9 @@ npx prisma migrate dev
 npx prisma generate
 npx prisma db seed
 # Cela crée les comptes :
-# - Admin : admin@biba.sn / password123
-# - Vendeur : vendeur@biba.sn / password123
-# - Acheteur : acheteur@biba.sn / password123
+# - Admin : admin@vinted.sn / password123
+# - Vendeur : vendeur@vinted.sn / password123
+# - Acheteur : acheteur@vinted.sn / password123
 ```
 
 ### 2. Backend (API)

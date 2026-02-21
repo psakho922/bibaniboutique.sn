@@ -1,5 +1,5 @@
 {
-  "name": "@audit/api",
+  "name": "@vinted/api",
   "version": "1.0.0",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
