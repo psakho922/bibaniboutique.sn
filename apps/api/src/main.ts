@@ -1,19 +1,15 @@
-/**
- * AUDIT DOC (débutant):
- * - Démarre le serveur NestJS.
- * - Active la validation des DTOs.
- * - Monte le module AppModule qui regroupe tous les modules (paiements, etc.).
- */
-import 'reflect-metadata';
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
+  const server = express();
+  const app = await NestFactory.create(
+    AppModule,
+    new ExpressAdapter(server),
   );
-  await app.listen(process.env.PORT ?? 3001);
+
+  await app.listen(process.env.PORT || 3000);
 }
-void bootstrap();
+bootstrap();
